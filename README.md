@@ -1,4 +1,4 @@
-#Sentiment Analysis of IMDb Movie Reviews
+Sentiment Analysis of IMDb Movie Reviews
 
 This project uses a neural network to perform sentiment analysis on IMDb movie reviews. The dataset was obtained from Kaggle and preprocessed to prepare it for a deep learning model built using TensorFlow/Keras.
 
