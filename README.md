@@ -1,123 +1,128 @@
-Sentiment Analysis of IMDb Movie Reviews
 
-This project uses a neural network to perform sentiment analysis on IMDb movie reviews. The dataset was obtained from Kaggle and preprocessed to prepare it for a deep learning model built using TensorFlow/Keras.
+# Sentiment Analysis of IMDb Reviews
 
-Dataset
+This project implements a sentiment analysis system using Python to classify IMDb movie reviews as either positive or negative. The model is trained on a dataset of 50,000 IMDb reviews and utilizes word embeddings for natural language processing.
 
-Sources
+## Features
 
-	1.	IMDb Dataset of 50k Movie Reviews: Contains movie reviews and their associated sentiments (positive or negative).
-	2.	Word Index Dataset: Maps words to unique indexes for text encoding.
+	•	Data Preprocessing: Text data is tokenized, encoded, and padded for uniformity.
+	•	Word Embedding: Words are mapped to dense vectors to capture semantic meaning.
+	•	Binary Classification: The model classifies reviews as either positive or negative.
+	•	Custom Predictions: Test the model with new reviews for sentiment classification.
 
-Structure
+## Prerequisites
 
-	•	Columns in the IMDb dataset:
-	•	review: Text of the movie review.
-	•	sentiment: Sentiment (positive or negative).
-	•	Columns in the Word Index dataset:
-	•	Words: Unique words in the dataset.
-	•	Indexes: Corresponding unique indexes for each word.
+	•	Python 3.x
+	•	TensorFlow
+	•	Required Python libraries: pandas, numpy, scikit-learn, and opendatasets.
 
-Project Workflow
+## Installation
 
-1. Environment Setup
+	1.	Clone the Repository
 
-Install the necessary libraries:
+git clone https://github.com/yourusername/sentiment-analysis-imdb.git
+cd sentiment-analysis-imdb
 
-pip install opendatasets
-pip install tensorflow
 
-2. Dataset Download
+	2.	Install the Required Python Packages
 
-Using opendatasets, the IMDb reviews and word index datasets were downloaded from Kaggle.
+pip install tensorflow pandas numpy scikit-learn opendatasets
+
+
+	3.	Download the Dataset
+The project uses the IMDb Dataset of 50K Movie Reviews.
+Run the following in Python to download the dataset:
 
 import opendatasets as od
-
 od.download("https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews")
-od.download("https://www.kaggle.com/datasets/virenmohanlal/word-indexes")
 
-3. Data Preprocessing
 
-	•	Split Dataset:
-	•	The IMDb dataset was split into training (80%) and testing (20%) sets using train_test_split.
-	•	Word Indexing:
-	•	Mapped each word in the review to its corresponding index using the Word Index dataset.
-	•	Sentiment Encoding:
-	•	Converted sentiments into binary labels (positive: 1, negative: 0).
-	•	Padding:
-	•	Padded reviews to ensure equal length of 500 words for input consistency.
 
-train_data=keras.preprocessing.sequence.pad_sequences(train_data, value=padding_value, padding='post', maxlen=500)
-test_data=keras.preprocessing.sequence.pad_sequences(test_data, value=padding_value, padding='post', maxlen=500)
+## Usage
 
-4. Model Building
+Preprocessing and Model Training
 
-	•	Embedding Layer:
-Converts word indexes into dense vectors of fixed size (16).
-	•	Global Average Pooling:
-Reduces the dimensionality of the embedding vectors.
-	•	Dense Layers:
-	•	16 units with ReLU activation.
-	•	1 unit with Sigmoid activation for binary classification.
+import opendatasets as od
+import pandas as pd
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Embedding, GlobalAveragePooling1D, Dense
+from sklearn.model_selection import train_test_split
 
-model = keras.Sequential([
-    keras.layers.Embedding(max_word_index + 1, 16),
-    keras.layers.GlobalAveragePooling1D(),
-    keras.layers.Dense(16, activation='relu'),
-    keras.layers.Dense(1, activation='sigmoid')
+## Load dataset
+file = pd.read_csv('imdb-dataset-of-50k-movie-reviews/IMDB Dataset.csv')
+
+## Split data
+imdb_reviews, test_reviews = train_test_split(file, test_size=0.2, random_state=42)
+
+## Encode labels
+def encode_sentiments(sentiment):
+    return 1 if sentiment == 'positive' else 0
+
+train_data, train_label = imdb_reviews['review'], imdb_reviews['sentiment'].apply(encode_sentiments)
+test_data, test_label = test_reviews['review'], test_reviews['sentiment'].apply(encode_sentiments)
+
+## Tokenize and pad sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts(train_data)
+
+train_data = tokenizer.texts_to_sequences(train_data)
+test_data = tokenizer.texts_to_sequences(test_data)
+
+vocab_size = len(tokenizer.word_index) + 1
+max_length = 500
+
+train_data = pad_sequences(train_data, maxlen=max_length, padding='post')
+test_data = pad_sequences(test_data, maxlen=max_length, padding='post')
+
+## Define the model
+model = Sequential([
+    Embedding(vocab_size, 16),
+    GlobalAveragePooling1D(),
+    Dense(16, activation='relu'),
+    Dense(1, activation='sigmoid')
 ])
 
-	•	Compilation:
-	•	Optimizer: Adam
-	•	Loss: Binary Crossentropy
-	•	Metrics: Accuracy
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-5. Model Training
-
-The model was trained on the training data for 30 epochs with a batch size of 512. Validation was performed on the test set.
-
+# Train the model
 history = model.fit(train_data, train_label, epochs=30, batch_size=512, validation_data=(test_data, test_label))
 
-6. Evaluation
+Evaluate and Test the Model
 
-The trained model achieved an accuracy of 87.19% on the test dataset.
-
+## Evaluate the model
 loss, accuracy = model.evaluate(test_data, test_label)
-print(f"Accuracy: {accuracy:.2f}, Loss: {loss:.2f}")
+print(f"Test Accuracy: {accuracy:.2f}")
 
-7. Prediction
+## Test with a custom review
+user_review = "The movie was fantastic with great acting and direction!"
+user_review_seq = tokenizer.texts_to_sequences([user_review])
+user_review_padded = pad_sequences(user_review_seq, maxlen=max_length, padding='post')
 
-The model can predict the sentiment of a randomly chosen review from the test set.
+prediction = model.predict(user_review_padded)
+print("Positive sentiment" if prediction > 0.5 else "Negative sentiment")
 
-user_review = test_data[index]
-user_review = np.array([user_review])
-if (model.predict(user_review) > 0.5).astype("int32"):
-    print("positive sentiment")
-else:
-    print("negative sentiment")
+## Results
 
-Results
+	•	Accuracy: Achieved 87.19% accuracy on the test dataset.
+	•	Model Performance: The model generalizes well on unseen reviews.
 
-The model successfully predicts the sentiment of movie reviews with high accuracy. Predictions on unseen reviews demonstrate the model’s capability for generalization.
+## Dataset
 
-Files in the Repository
+	•	The IMDb Dataset of 50K Movie Reviews is available here.
 
-	1.	IMDB Dataset.csv - Original IMDb dataset.
-	2.	word_indexes.csv - Word-to-index mapping dataset.
-	3.	README.md - Documentation file (this file).
+## License
 
-How to Run the Project
+This project is licensed under the MIT License. See the LICENSE file for details.
 
-	1.	Clone or download the project.
-	2.	Run the script in Google Colab.
-	3.	Ensure Kaggle API keys are configured in Colab for dataset download.
-	4.	Execute each cell sequentially to train, evaluate, and test the model.
+## Contributing
 
-Technologies Used
+Contributions are welcome! Please open an issue or submit a pull request for any enhancements or bug fixes.
 
-	•	Python: Programming language.
-	•	TensorFlow/Keras: Deep learning framework.
-	•	Pandas: Data manipulation.
-	•	NumPy: Numerical computations.
-	•	scikit-learn: Train/test splitting.
+## Contact
 
+If you have any questions or suggestions, feel free to reach out at yuvraj.works1@gmail.com.
